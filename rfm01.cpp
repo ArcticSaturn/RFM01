@@ -77,6 +77,23 @@ void RFM01::writeRegister(uint8_t HighByte, uint8_t LowByte) {
 
 void RFM01::configureDeviceSettings() {
 	writeRegister(0x00,0x00);	// 
+	writeRegister(0x91,0x7A);	// 868MHz Band +/- 134kHz bandwidth, 12.5pF
+	writeRegister(0xA6,0x86);	// 868.35 MHz
+	//writeRegister(0xD0,0x40);	// RATE/2
+	writeRegister(0xC8,0x11);	// 4.8kbps
+	writeRegister(0xC6,0x9B);	// AFC control register
+	writeRegister(0xC4,0x2A);	// Clock recovery manual control,Digital filter,DQD=4
+	writeRegister(0xC2,0xE0);	// //output 1.66MHz
+	writeRegister(0xC0,0x42);	// Clock recovery lock
+	writeRegister(0xE0,0x00);	// wake up timer
+	writeRegister(0xCC,0x00);	// low duty cycle command
+	
+	writeRegister(0xCE,0x89);	// FIFO sync word
+	writeRegister(0xCE,0x8B);	// FIFO fill and enable
+	writeRegister(0xC0,0x43);	// enable RX
+/*	
+	
+	writeRegister(0x00,0x00);	// 
 	writeRegister(0x90,0x82);	// 868MHz Band +/- 134kHz bandwidth, 12.5pF
 	writeRegister(0xA6,0x86);	// 868.35 MHz
 	//writeRegister(0xD0,0x40);	// RATE/2
@@ -91,7 +108,7 @@ void RFM01::configureDeviceSettings() {
 	writeRegister(0xCE,0x8C);	// FIFO sync word
 	writeRegister(0xCE,0x8F);	// FIFO fill and enable
 	writeRegister(0xC0,0x83);	// enable RX
-	
+	*/
 }
 void RFM01::receive() {
 	int dummy;
