@@ -51,10 +51,12 @@ void RFM01::begin() {
     
 	pinMode(P_NIRQ, INPUT);
 	
+	pinMode(25, OUTPUT);
 	pinMode(26, OUTPUT);
-	digitalWrite(26, HIGH);
-	delay(2000);
 	digitalWrite(26, LOW);
+	digitalWrite(25, HIGH);
+	delay(50);
+	digitalWrite(25, LOW);
 	
 	
 	//digitalWrite(SS,HIGH);
