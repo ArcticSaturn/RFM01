@@ -9,7 +9,9 @@
 // defaults
 //#define DEVADDR	0x00
 //#define CHANNEL	0x00
-//#define GDO0	13	// P2.6 on MSP430F2274 on RF2500T	
+#define PACKETLENGTH	3	// expect 10 bytes to receive
+
+
 
 class RFM01 {
 public:
@@ -29,7 +31,7 @@ public:
 //private:
 	void writeRegister(uint8_t HighByte, uint8_t LowByte);
 	void configureDeviceSettings();
-	void receive();
+	uint8_t receive();
 	//int8_t receiveRxBuffer(uint8_t *rxBuffer, uint8_t size);
 	//void RFM02_TX_DataByte_FSK(uint8_t DataByte);
 	
