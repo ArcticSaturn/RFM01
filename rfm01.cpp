@@ -97,9 +97,9 @@ void RFM01::configureDeviceSettings() {
 	writeRegister(0xC0,0x83);	// enable RX
 	
 }
-uint8_t RFM01::receive(){
+uint8_t RFM01::receive(uint8_t *data){
 	int dummy;
-	int result;
+	uint8_t result;
 	uint8_t _PacketReceived=0;
 	if(flag) {
 		digitalWrite(4, LOW); // CS LOW
@@ -108,7 +108,13 @@ uint8_t RFM01::receive(){
 		SPI.transfer(0x00);  // read high status byte, but don't evaluate
 		SPI.transfer(0x00);  // read low status byte, but don't evaluate
 		//result[PacketCounter] = SPI.transfer(0x00);  // result
-		Serial.println(SPI.transfer(0x00));  // result
+		//Serial.println(result[PacketCounter]);
+		//Serial.println(SPI.transfer(0x00));  // result
+		*data++ = SPI.transfer(0x00); // store received packet into data
+		//result = SPI.transfer(0x00); // store received packet into data
+		//Serial.println(result);
+		result= data[PacketCounter] ; // store received packet into data
+		Serial.println(result);
 		digitalWrite(4, HIGH); // CS HIGH
 	 
 		PacketCounter++;  
@@ -118,7 +124,7 @@ uint8_t RFM01::receive(){
    
 		writeRegister(0xCE,0x84);	// FIFO sync word
 		writeRegister(0xCE,0x87);	// FIFO fill and enable
-		Serial.println(PacketCounter);
+		//Serial.println(PacketCounter);
 		//Serial.println(result[0]);
 		//Serial.println(result[1]);
 		//Serial.println(result[2]);
@@ -128,9 +134,9 @@ uint8_t RFM01::receive(){
 		//Serial.println(result[6]
 		//Serial.println(result[7]
 		//Serial.println(result[8]);
-		digitalWrite(26, HIGH);
-		delay(30);
-		digitalWrite(26, LOW);
+		//digitalWrite(26, HIGH);
+		//delay(30);
+		//digitalWrite(26, LOW);
 		_PacketReceived=1;
 		PacketCounter=0;
 		

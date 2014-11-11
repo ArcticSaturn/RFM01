@@ -31,7 +31,7 @@ public:
 //private:
 	void writeRegister(uint8_t HighByte, uint8_t LowByte);
 	void configureDeviceSettings();
-	uint8_t receive();
+	uint8_t receive(uint8_t *data);
 	//int8_t receiveRxBuffer(uint8_t *rxBuffer, uint8_t size);
 	//void RFM02_TX_DataByte_FSK(uint8_t DataByte);
 	
