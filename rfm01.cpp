@@ -107,14 +107,18 @@ uint8_t RFM01::receive(uint8_t *data){
 		//result[PacketCounter] = SPI.transfer(0x00);  // low status byte
 		SPI.transfer(0x00);  // read high status byte, but don't evaluate
 		SPI.transfer(0x00);  // read low status byte, but don't evaluate
+		data[PacketCounter] = SPI.transfer(0x00); // store received packet into data
+		Serial.println(data[PacketCounter]);
+		
 		//result[PacketCounter] = SPI.transfer(0x00);  // result
 		//Serial.println(result[PacketCounter]);
 		//Serial.println(SPI.transfer(0x00));  // result
-		*data++ = SPI.transfer(0x00); // store received packet into data
+		
 		//result = SPI.transfer(0x00); // store received packet into data
 		//Serial.println(result);
-		result= data[PacketCounter] ; // store received packet into data
-		Serial.println(result);
+		//result= data[PacketCounter] ; // store received packet into data
+		//Serial.println(result);
+		
 		digitalWrite(4, HIGH); // CS HIGH
 	 
 		PacketCounter++;  
