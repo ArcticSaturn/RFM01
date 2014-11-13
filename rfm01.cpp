@@ -39,11 +39,7 @@ RFM01::RFM01(uint8_t pinChipSelect,uint8_t pinNIRQ){
 	_pinNIRQ = pinNIRQ;
 }
 
-// set length of expected message
-void RFM01::SetMessageLength(uint8_t MessageLength){
-	_MessageLength = MessageLength;
-	
-}
+
 
 // setup routine
 void RFM01::begin() {
@@ -91,7 +87,7 @@ void RFM01::configureDeviceSettings() {
 
 
 
-uint8_t RFM01::receive(uint8_t *data){
+uint8_t RFM01::receive(uint8_t *rxData){
 	int dummy;
 	uint8_t _result;					// temporary variable to store result
 	uint8_t _MessageReceived=0;			// stays 0, as long as message is not complete
@@ -101,7 +97,7 @@ uint8_t RFM01::receive(uint8_t *data){
 		SPI.transfer(0x00);  			// read high status byte, but don't evaluate
 		SPI.transfer(0x00);  			// read low status byte, but don't evaluate
 		_result = SPI.transfer(0x00); 	// store received packet into into local variable
-		data[PacketCounter] = _result; 	// store received packet into array
+		rxData[PacketCounter] = _result; 	// store received packet into array
 		digitalWrite(4, HIGH); 			// CS HIGH
 	 
 		PacketCounter++;  				// increase counter for received packets
