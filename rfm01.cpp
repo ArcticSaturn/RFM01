@@ -1,18 +1,42 @@
-
-
 #include "rfm01.h"
 #include "Energia.h"
 
 void nIRQISR();
 	
-uint8_t _pinNIRQ;
-uint8_t _pinSOMI;
-uint8_t _pinSIMO;
-uint8_t _pinChipSelect;
-uint8_t _pinSerialClock;
+//uint8_t _pinSOMI;
+//uint8_t _pinSIMO;
+//uint8_t _pinSerialClock;
 
-uint8_t _MessageLength = MESSAGELENGTH;		//default value for expected message length
-											// a message consists of several bytes
+uint8_t _pinNIRQ;
+uint8_t _pinChipSelect;
+uint8_t _RFAddress;
+
+/* 
+* Protocol
+* ========
+* byte 0	message length including byte 0
+* byte 1	address
+* byte 2	data 0
+* byte 3	data 1
+* ...		...
+* byte n-1	data n-3
+* byte n	checksum
+*
+* checksum = message length + address + data0 + data n-3
+* 
+* example
+* =======
+* byte 0	0x09 -> message length = 8
+* byte 1	0x01 -> address
+* byte 2	0x12 -> data 0
+* byte 3	0xFF -> data 1
+* byte 4	0x2A -> data 2
+* byte 5	0x32 -> data 3
+* byte 6	0x74 -> data 4
+* byte 7	0xEB -> checksum
+* 
+*/
+
 
 // Booster Pack Pins FR5969
 //  7 - P2.2 for SPI_CLK mode
@@ -20,30 +44,51 @@ uint8_t _MessageLength = MESSAGELENGTH;		//default value for expected message le
 // 14 - P1.7 for SPI_SOMI mode
 //  5 - P2.5 output pin for SPI_CS
 // 18 - P3.0 nIRQ for sending data
-    
 
+
+uint8_t _MessageLength = MESSAGELENGTH;		//default value for expected message length
+						// a message consists of several bytes
+volatile int RxFlag = LOW; 	//flag that indicates if nIRQ went low
+int PacketCounter=0; 		// counts the number of bytes that are received
+    
+ 
+/*
+* variables for empty constructors
+*/    
 static const uint8_t P_CS   = 4;
 static const uint8_t P_NIRQ = 18;
+static const uint8_t RFAddress = 0x01;
 
-volatile int flag = LOW; 	//flag that indicates if nIRQ went low
-int PacketCounter=0; 		// counts the number of bytes that are received
-
-// empty constructor
+/*
+* empty constructor
+*/
 RFM01::RFM01()
 {
-	RFM01(P_CS, P_NIRQ);
+	RFM01(P_CS, P_NIRQ, RFAddress);
+}
+/*
+* constructor with 2 variables
+* RFAddress is predefined
+*/
+RFM01::RFM01(uint8_t pinChipSelect,uint8_t pinNIRQ)
+{
+	RFM01(pinChipSelect, pinNIRQ, RFAddress);
 }
 
-// constructor with variables
-RFM01::RFM01(uint8_t pinChipSelect,uint8_t pinNIRQ)
+/*
+* constructor with 3 variables
+* all are given by user
+*/
+RFM01::RFM01(uint8_t pinChipSelect,uint8_t pinNIRQ, uint8_t Address)
 {
 	_pinChipSelect = pinChipSelect;
 	_pinNIRQ = pinNIRQ;
+	_RFAddress = Address;
 }
 
-
-
-// setup routine
+/*
+* setup routine
+*/
 void RFM01::begin()
 {
 	digitalWrite(_pinChipSelect, HIGH);		// set chip select high
@@ -84,6 +129,7 @@ void RFM01::configureDeviceSettings() {
 	
 	writeRegister(0xCE,0x84);	// FIFO sync word
 	writeRegister(0xCE,0x87);	// FIFO fill and enable
+	
 	writeRegister(0xC0,0xC3);	// enable RX
 	
 	
@@ -93,37 +139,42 @@ void RFM01::configureDeviceSettings() {
 
 uint8_t RFM01::receive(uint8_t *rxData){
 	int dummy;
-	uint8_t _result;				// temporary variable to store result
-	uint8_t _MessageReceived=0;			// stays 0, as long as message is not complete
+	uint8_t _result;// temporary variable to store result
+	uint8_t _MessageReceived=0;// stays 0, as long as message is not complete
 	
-	if(flag) {
-		digitalWrite(4, LOW); 			// CS LOW
-		SPI.transfer(0x00);  			// read high status byte, but don't evaluate
-		SPI.transfer(0x00);  			// read low status byte, but don't evaluate
-		_result = SPI.transfer(0x00); 		// store received packet into into local variable
-		rxData[PacketCounter] = _result; 	// store received packet into array
-		digitalWrite(4, HIGH); 			// CS HIGH
+	if(RxFlag) {
+		digitalWrite(_pinChipSelect, LOW);	// CS LOW
+		SPI.transfer(0x00);  	// read high status byte, but don't evaluate
+		SPI.transfer(0x00);  	// read low status byte, but don't evaluate
+		_result = SPI.transfer(0x00); // store received packet into into local variable
+		rxData[PacketCounter] = _result;// store received packet into array
+		digitalWrite(_pinChipSelect, HIGH); 	// CS HIGH
 	 
-		PacketCounter++;  			// increase counter for received packets
-		flag = LOW;				// reset ISR flag
+		PacketCounter++;  // increase counter for received packets
+		RxFlag = LOW;	// reset ISR flag
 	}
+	// if last correct byte was received, clear FIFO
+	// and set _MessageReceived=1
 	if(PacketCounter==_MessageLength){
    
-		writeRegister(0xCE,0x84);		// FIFO sync word
-		writeRegister(0xCE,0x87);		// FIFO fill and enable
+		writeRegister(0xCE,0x84);// FIFO sync word
+		writeRegister(0xCE,0x87);// FIFO fill and enable
 		
-		if(rxData[0]!=0)			// first byte cannot be zero, if so message is wrong
-			_MessageReceived=1;		// complete message has been received
-		PacketCounter=0;			// reset PacketCounter
+		if(rxData[0]!=0)	// first byte cannot be zero, if so message is wrong
+			_MessageReceived=1;// complete message has been received
+		PacketCounter=0;// reset PacketCounter
 	}
 
-	return _MessageReceived;			// return value if complete Message has been received
+	return _MessageReceived;// return value if complete Message has been received
 }
 
-
+/*
+* if nIRQ = low ==> byte is received)
+* set RxFlag = high
+*/
 void nIRQISR()
 {
-	flag = HIGH; 					// if nIRQ = low (byte received) set flag = high
+	RxFlag = HIGH; 					
 }
 
 
