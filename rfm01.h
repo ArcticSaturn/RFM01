@@ -22,22 +22,23 @@ public:
 	// empty constructor
 	RFM01();
 	// constructor with variables
-	RFM01(uint8_t pinChipSelect, uint8_t pinNIRQ);
+	RFM01(uint8_t Address);
 	// constructor with variables
-	RFM01(uint8_t pinChipSelect, uint8_t pinNIRQ, uint8_t Address);
+	RFM01(uint8_t Address, uint8_t pinChipSelect, uint8_t pinNIRQ );
 	
 	
 	// setup RFM01
 	void begin();
 	// receive bytes
 	uint8_t receive(uint8_t *rxData);  
+	uint8_t receive_with_protocol(uint8_t *rxData);  
 
 
 
 //private:
 	void writeRegister(uint8_t HighByte, uint8_t LowByte);
 	void configureDeviceSettings();
-	
+	uint8_t CheckMessage(uint8_t *rxData);
 	
 
 };

@@ -57,29 +57,29 @@ int PacketCounter=0; 		// counts the number of bytes that are received
 */    
 static const uint8_t P_CS   = 4;
 static const uint8_t P_NIRQ = 18;
-static const uint8_t RFAddress = 0x01;
+static const uint8_t RFAddress = 0x02;
 
 /*
 * empty constructor
 */
 RFM01::RFM01()
 {
-	RFM01(P_CS, P_NIRQ, RFAddress);
+	RFM01(RFAddress, P_CS, P_NIRQ);
 }
 /*
-* constructor with 2 variables
+* constructor with 1 variables
 * RFAddress is predefined
 */
-RFM01::RFM01(uint8_t pinChipSelect,uint8_t pinNIRQ)
+RFM01::RFM01(uint8_t Address)
 {
-	RFM01(pinChipSelect, pinNIRQ, RFAddress);
+	RFM01(Address, P_CS, P_NIRQ);
 }
 
 /*
 * constructor with 3 variables
 * all are given by user
 */
-RFM01::RFM01(uint8_t pinChipSelect,uint8_t pinNIRQ, uint8_t Address)
+RFM01::RFM01( uint8_t Address, uint8_t pinChipSelect,uint8_t pinNIRQ)
 {
 	_pinChipSelect = pinChipSelect;
 	_pinNIRQ = pinNIRQ;
@@ -166,6 +166,61 @@ uint8_t RFM01::receive(uint8_t *rxData){
 	}
 
 	return _MessageReceived;// return value if complete Message has been received
+}
+
+uint8_t RFM01::receive_with_protocol(uint8_t *rxData){
+	int dummy;
+	uint8_t _result;// temporary variable to store result
+	uint8_t _MessageCorrect=0;// stays 0, as long as message is not complete
+	
+	if(RxFlag) {
+		digitalWrite(_pinChipSelect, LOW);	// CS LOW
+		SPI.transfer(0x00);  	// read high status byte, but don't evaluate
+		SPI.transfer(0x00);  	// read low status byte, but don't evaluate
+		_result = SPI.transfer(0x00); // store received packet into into local variable
+		rxData[PacketCounter] = _result;// store received packet into array
+		digitalWrite(_pinChipSelect, HIGH); 	// CS HIGH
+	 
+		PacketCounter++;  // increase counter for received packets
+		RxFlag = LOW;	// reset ISR flag
+	}
+	// if last correct byte was received, clear FIFO
+	// and set _MessageCorrect=1
+	if(PacketCounter==_MessageLength){
+   
+		writeRegister(0xCE,0x84);// FIFO sync word
+		writeRegister(0xCE,0x87);// FIFO fill and enable
+		
+		if(CheckMessage(rxData) == 0)
+			_MessageCorrect = 1;
+		
+		PacketCounter=0;// reset PacketCounter
+	}
+
+	return _MessageCorrect;// return value if complete Message has been received
+}
+/*
+* checks if received is valid
+*  - first byte cannot be zero
+*  - checks for correct address
+*  - calculate checksum (to be done)
+*
+* input: received message
+* output: _ErrorCounter, if > 0, message has errors
+*/
+uint8_t RFM01::CheckMessage(uint8_t *rxData)
+{
+	uint8_t _ErrorCounter=0;
+	
+	// check byte 0
+	if(rxData[0]==0)	
+		_ErrorCounter+=1;	
+	// check byte 1
+	if(!((rxData[1]==_RFAddress) || (rxData[1]==0xFF)))
+		_ErrorCounter+=1;
+	
+	// if _ErrorCounter is = 0, message is ok
+	return _ErrorCounter;	
 }
 
 /*
