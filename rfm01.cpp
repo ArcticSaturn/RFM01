@@ -138,7 +138,7 @@ void RFM01::writeRegister(uint8_t HighByte, uint8_t LowByte) {
 // 
 void RFM01::configureDeviceSettings() {
 	writeRegister(0x00,0x00);	// 
-	writeRegister(0x91,0x86);	// 868MHz Band +/- 134kHz bandwidth, 12.5pF
+	writeRegister(0x91,0x88);	// 868MHz Band +/- 134kHz bandwidth, 12.5pF
 	writeRegister(0xA6,0x86);	// 868.35 MHz
 	writeRegister(0xC8,0x47);	// 4.8kbps
 	writeRegister(0xC6,0x9B);	// AFC control register
@@ -150,7 +150,7 @@ void RFM01::configureDeviceSettings() {
 	
 	writeRegister(0xCE,0x84);	// FIFO sync word
 	writeRegister(0xCE,0x87);	// FIFO fill and enable
-	
+	writeRegister(0xC0,0xC2);	// enable RX	
 	writeRegister(0xC0,0xC3);	// enable RX
 	
 	
