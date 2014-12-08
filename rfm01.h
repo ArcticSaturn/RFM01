@@ -1,3 +1,5 @@
+#ifndef RFM01_h
+#define RFM01_h
 
 #ifndef MESSAGELENGTH
 #define MESSAGELENGTH	10	// expect 10 bytes to receive
@@ -8,8 +10,8 @@
 #endif
 
 
-#ifndef RFM01_h
-#define RFM01_h
+
+
 // defaults
 
 #include <SPI.h>
@@ -30,8 +32,7 @@ public:
 	// setup RFM01
 	void begin();
 	// receive bytes
-	uint8_t receive(uint8_t *rxData);  
-	uint8_t receive_with_protocol(uint8_t *rxData);  
+	uint8_t receive_with_protocol(uint8_t *rxData, uint8_t MsgLngth);  
 
 
 
@@ -39,6 +40,7 @@ public:
 	void writeRegister(uint8_t HighByte, uint8_t LowByte);
 	void configureDeviceSettings();
 	uint8_t CheckMessage(uint8_t *rxData);
+	uint8_t TestChkSum(uint8_t *rxData);		
 	
 
 };
