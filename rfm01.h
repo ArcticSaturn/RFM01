@@ -32,12 +32,14 @@ public:
 	// setup RFM01
 	void begin();
 	// receive bytes
-	uint8_t receive_with_protocol(uint8_t *rxData, uint8_t MsgLngth);  
+	uint8_t receive_with_protocol(uint8_t *rxData, uint16_t *rxStatus, uint8_t MsgLngth);  
 
 
 
 //private:
 	void writeRegister(uint8_t HighByte, uint8_t LowByte);
+	void writeReg(uint16_t ConfigByte);
+	
 	void configureDeviceSettings();
 	uint8_t CheckMessage(uint8_t *rxData);
 	uint8_t TestChkSum(uint8_t *rxData);		

@@ -133,26 +133,46 @@ void RFM01::writeRegister(uint8_t HighByte, uint8_t LowByte) {
 	SPI.transfer(LowByte);
 	digitalWrite(_pinChipSelect,HIGH);
 }
-
+void RFM01::writeReg(uint16_t ConfigByte) {
+	uint8_t HighByte=0;
+	uint8_t LowByte=0;
+	
+	HighByte = ConfigByte>>8;
+	LowByte = ConfigByte;
+	
+	digitalWrite(_pinChipSelect,LOW);
+	SPI.transfer(HighByte);
+	SPI.transfer(LowByte);
+	digitalWrite(_pinChipSelect,HIGH);
+}
 
 // 
 void RFM01::configureDeviceSettings() {
-	writeRegister(0x00,0x00);	// 
-	writeRegister(0x91,0x88);	// 868MHz Band +/- 134kHz bandwidth, 12.5pF
-	writeRegister(0xA6,0x86);	// 868.35 MHz
-	writeRegister(0xC8,0x47);	// 4.8kbps
-	writeRegister(0xC6,0x9B);	// AFC control register
-	writeRegister(0xC4,0x2A);	// Clock recovery manual control,Digital filter,DQD=4
-	writeRegister(0xC2,0xE0);	// //output 1.66MHz
-	writeRegister(0xC0,0x42);	// Clock recovery lock
-	writeRegister(0xE0,0x00);	// wake up timer
-	writeRegister(0xCC,0x00);	// low duty cycle command
+	uint16_t temp;
+	// send read status command
+	// !!!must!! if not sent, it will not work
+	writeReg(0x0000);
+	// 868MHz Band +/- 200kHz bandwidth, 12.5pF
+	writeReg(CONFIG_CMD+BAND_868MHz+BW_200kHz+CAP_12_5PF);
+	// 868.35 MHz
+	writeReg(FREQ_SET_CMD+F_868_3500_MHZ);	
+	// 4.8kbps
+	writeReg(BAUD_CMD+BR_04_8_BPS);
+	/*
+	writeReg(0xC69B);	// AFC control register
+	writeReg(0xC42C);	// Clock recovery manual control,Digital filter,DQD=4
+	writeReg(0xC2E0);	// //output 1.66MHz
+	writeReg(0xC042);	// Clock recovery lock
+	writeReg(0xE000);	// wake up timer
+	writeReg(0xCC00);	// low duty cycle command
+	*/
+	writeReg(0xCE84);	// FIFO sync word
+	writeReg(0xCE87);	// FIFO fill and enable
 	
-	writeRegister(0xCE,0x84);	// FIFO sync word
-	writeRegister(0xCE,0x87);	// FIFO fill and enable
-	writeRegister(0xC0,0xC2);	// enable RX	
-	writeRegister(0xC0,0xC3);	// enable RX
-	
+	temp = RX_CMD+VDI_DRSSIDQD+RSSI_103dBm;
+	writeReg(temp);	
+	temp |= RX_EN; 		// enable RX
+	writeReg(temp);	
 	
 }
 
@@ -164,9 +184,10 @@ void RFM01::configureDeviceSettings() {
  * 				1 if correct
  *
  */
-uint8_t RFM01::receive_with_protocol(uint8_t *rxData, uint8_t MsgLngth){
+uint8_t RFM01::receive_with_protocol(uint8_t *rxData, uint16_t *rxStatus, uint8_t MsgLngth){
 	
-	uint8_t _temp;		// temp variable to store result
+	uint8_t _temp, _tmpStatusHigh, _tmpStatusLow;		// temp variable to store result
+	
 	uint8_t _MsgCorrect=0;	// stays 0 if message is not correct
 	
 	/*
@@ -179,12 +200,12 @@ uint8_t RFM01::receive_with_protocol(uint8_t *rxData, uint8_t MsgLngth){
 	 */ 
 	if(RxFlag) {
 		digitalWrite(_pinChipSelect, LOW);
-		SPI.transfer(0x00);
-		SPI.transfer(0x00);
+		_tmpStatusHigh= SPI.transfer(0x00);
+		_tmpStatusLow = SPI.transfer(0x00);
 		_temp = SPI.transfer(0x00);
 		rxData[PacketCounter] = _temp;
 		digitalWrite(_pinChipSelect, HIGH);
-	 
+		rxStatus[PacketCounter] = ((uint16_t)_tmpStatusHigh<<8) + _tmpStatusLow;
 		PacketCounter++;  // increase counter for received packets
 		RxFlag = LOW;	// reset ISR flag
 	}
