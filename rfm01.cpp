@@ -8,7 +8,7 @@ void nIRQISR();
 //uint8_t _pinSerialClock;
 
 uint8_t _pinNIRQ;
-uint8_t _pinChipSelect;
+uint8_t _pinChipSelectRFM01;
 uint8_t _RFAddress;
 
 /* 
@@ -81,7 +81,7 @@ RFM01::RFM01(uint8_t Address)
 */
 RFM01::RFM01( uint8_t Address, uint8_t pinChipSelect,uint8_t pinNIRQ)
 {
-	_pinChipSelect = pinChipSelect;
+	_pinChipSelectRFM01 = pinChipSelect;
 	_pinNIRQ = pinNIRQ;
 	_RFAddress = Address;
 }
@@ -97,8 +97,8 @@ RFM01::RFM01( uint8_t Address, uint8_t pinChipSelect,uint8_t pinNIRQ)
 */
 void RFM01::begin()
 {
-	digitalWrite(_pinChipSelect, HIGH);
-	pinMode(_pinChipSelect, OUTPUT);
+	digitalWrite(_pinChipSelectRFM01, HIGH);
+	pinMode(_pinChipSelectRFM01, OUTPUT);
 	pinMode(P_NIRQ, INPUT);	
 
 	configureDeviceSettings();		
@@ -128,10 +128,10 @@ void RFM01::begin()
  *
  */
 void RFM01::writeRegister(uint8_t HighByte, uint8_t LowByte) {
-	digitalWrite(_pinChipSelect,LOW);
+	digitalWrite(_pinChipSelectRFM01,LOW);
 	SPI.transfer(HighByte);
 	SPI.transfer(LowByte);
-	digitalWrite(_pinChipSelect,HIGH);
+	digitalWrite(_pinChipSelectRFM01,HIGH);
 }
 void RFM01::writeReg(uint16_t ConfigByte) {
 	uint8_t HighByte=0;
@@ -140,10 +140,10 @@ void RFM01::writeReg(uint16_t ConfigByte) {
 	HighByte = ConfigByte>>8;
 	LowByte = ConfigByte;
 	
-	digitalWrite(_pinChipSelect,LOW);
+	digitalWrite(_pinChipSelectRFM01,LOW);
 	SPI.transfer(HighByte);
 	SPI.transfer(LowByte);
-	digitalWrite(_pinChipSelect,HIGH);
+	digitalWrite(_pinChipSelectRFM01,HIGH);
 }
 
 // 
@@ -199,12 +199,12 @@ uint8_t RFM01::receive_with_protocol(uint8_t *rxData, uint16_t *rxStatus, uint8_
 	 *
 	 */ 
 	if(RxFlag) {
-		digitalWrite(_pinChipSelect, LOW);
+		digitalWrite(_pinChipSelectRFM01, LOW);
 		_tmpStatusHigh= SPI.transfer(0x00);
 		_tmpStatusLow = SPI.transfer(0x00);
 		_temp = SPI.transfer(0x00);
 		rxData[PacketCounter] = _temp;
-		digitalWrite(_pinChipSelect, HIGH);
+		digitalWrite(_pinChipSelectRFM01, HIGH);
 		rxStatus[PacketCounter] = ((uint16_t)_tmpStatusHigh<<8) + _tmpStatusLow;
 		PacketCounter++;  // increase counter for received packets
 		RxFlag = LOW;	// reset ISR flag
